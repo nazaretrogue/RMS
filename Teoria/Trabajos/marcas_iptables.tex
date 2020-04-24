@@ -1,0 +1,149 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}	%Idioma
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx} 	%Añadir imágenes
+\usepackage{geometry}	%Ajustar márgenes
+\usepackage[export]{adjustbox}[2011/08/13]
+\usepackage{float}
+\restylefloat{table}
+\usepackage[hidelinks]{hyperref}
+\usepackage{titling}
+\graphicspath{{/home/nazaret/Escritorio/LaTEX}}
+%\usepackage{minted}
+\usepackage{multirow}
+\usepackage{caption}
+\usepackage{multicol}
+\usepackage[shortlabels]{enumitem}
+\usepackage{array}
+\selectlanguage{spanish}
+
+%Opciones de encabezado y pie de página:
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\lhead{Nazaret Román Guerrero}
+\rhead{Redes Multiservicio}
+\lfoot{Grado en Ingeniería Informática}
+\cfoot{}
+\rfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+%Opciones de fuente:
+\usepackage[utf8]{inputenc}
+\usepackage[default]{sourcesanspro}
+\usepackage{sourcecodepro}
+\usepackage[T1]{fontenc}
+
+\setlength{\parindent}{15pt}
+\setlength{\headheight}{15pt}
+\setlength{\voffset}{10mm}
+
+% Custom colors
+\usepackage{color}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+
+\usepackage{xcolor}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily, basicstyle=\footnotesize,
+  showstringspaces=false,
+  commentstyle=\color{red},
+  keywordstyle=\color{blue}
+}
+
+\begin{document}
+\begin{titlepage}
+
+\begin{minipage}{\textwidth}
+
+\centering
+\includegraphics[width=0.5\textwidth]{img/logo.png}\\
+
+\textsc{\Large Redes Multiservicio\\[0.2cm]}
+\textsc{GRADO EN INGENIERÍA INFORMÁTICA}\\[1cm]
+
+{\Huge\bfseries Marcar paquetes con \texttt{iptables}\\}
+\noindent\rule[-1ex]{\textwidth}{3pt}\\[3.5ex]
+{\large\bfseries Tarea 1}
+\end{minipage}
+
+\vspace{1.5cm}
+\begin{minipage}{\textwidth}
+\centering
+
+\textbf{Autora}\\ {Nazaret Román Guerrero}\\[2.5ex]
+\includegraphics[width=0.3\textwidth]{img/etsiit.jpeg}\\[0.1cm]
+\vspace{1cm}
+\textsc{Escuela Técnica Superior de Ingenierías Informática y de Telecomunicación}\\
+\vspace{1cm}
+\textsc{Curso 2018-2019}
+\end{minipage}
+\end{titlepage}
+
+\pagenumbering{gobble}
+\pagenumbering{arabic}
+\tableofcontents
+\thispagestyle{empty}
+
+\newpage
+
+\section{Qué es \texttt{iptables}}
+
+\texttt{iptables} es una utilidad del kernel del sistema operativo de linux para configurar el cortafuegos. Se utiliza para filtrar paquetes que entran y salen del sistema.\\
+
+Lo que vamos a hacer en esta memoria es etiquetar o marcar los paquetes para poder clasificarlos según la marca que le hayamos puesto. Por ejemplo, si queremos marcar todos los paquetes que provdel protocolo \texttt{HTTP} antes de enrutarlos, se utilizará una directiva que coloque la marca que nosotros elijamos solo a estos paquetes.\\
+
+Sin más, vamos a mostrar el procedimiento.
+
+\section{Marcar un paquete}
+
+Manejar \texttt{iptables} es sencillo aunque a veces puede ser engorroso. Como en mi caso conozco la herramienta por haberla usado en otras asignaturas, aprender a marcar un paquete ha sido una tarea sencilla.\\
+
+Pongamos un ejemplo simple: todos los paquetes que lleguen a nuestro \textit{router} que sean del protocolo \texttt{HTTP}, serán marcados con un número, por ejemplo el 10, antes de ser enrutados de nuevo.\\
+
+\begin{lstlisting}[language=bash,caption={Comando iptables},captionpos=b]
+iptables -A PREROUTING -t mangle -p tcp --dport 80 -j MARK --set-mark 10
+\end{lstlisting}
+
+Vamos a explicar cada opción del comando:
+
+\begin{enumerate}
+	\item \texttt{iptables -A PREROUTING}: indica que se añade la regla o reglas que se definan en el comando a la política actual del firewall \textbf{sobre los paquetes que deben volver a ser enrutados}.
+	\item \texttt{-t mangle}: indica que la tabla de paquetes sobre la que se aplica. En nuestro caso sobre la tabla \texttt{mangle}, una tabla creada específicamente para la alteración de paquetes.
+	\item \texttt{-p tcp}: indica el protocolo a través del que llegan los paquetes, en este caso TCP.
+	\item \texttt{--dport 80}: establece el puerto por el que llegan los paquetes. En este caso el puerto 80 ya que estamos marcando los paquetes de \texttt{HTTP}.
+	\item \texttt{-j MARK}: indica el objetivo de la regla, es decir, qué se hará con cada paquete que llegue. Esta directiva indica que el paquete se va a marcar con la marca especificada con la opción \texttt{--set-mark}.
+	\item \texttt{--set-mark 10}: indica la marca que se va a poner en cada paquete. En este caso se pone 10 porque me gusta el número. Esta opción solo toma números enteros, no se pueden poner cadenas de texto o caracteres.
+\end{enumerate}
+
+No obstante, hay otra manera, más sencilla, algo menos intuitiva pero que es la que se utiliza actualmente (de hecho, yo misma lo he utilizado en la asignatura Servidores Web de Altas Prestaciones). Digo que es menos intuitiva porque lo que estamos haciendo es ocultar la forma de marcado bajo un comando u orden más simple. En lugar de crear una marca para cada paquete, se crea una ``cadena'', \textit{chain}, que es una lista de instrucciones que se ejecutan en orden para cada paquete. Por ejemplo, INPUT es una \textit{chain} que contiene una serie de instrucciones que se deben llevar a cabo sobre aquellos paquetes que son de entrada.\\
+
+Lo que vamos a hacer ahora es crear una cadena para que cada paquete que nos llegue al sistema se marque automáticamente, de igual forma que hemos hecho con el otro ejemplo.\\
+
+\begin{lstlisting}[language=bash,caption={iptables con chain},captionpos=b]
+iptables -N marca_paquete
+iptables -A INPUT -p tcp --dport 80 -j marca_paquete
+iptables -A marca_paquete MARK --set-mark 10
+\end{lstlisting}
+
+Explicaremos este ejemplo:
+
+\begin{enumerate}
+	\item \texttt{iptables -N marca\_paquete}: crea una \textit{chain} llamada \textbf{marca\_paquete}.
+	\item \texttt{iptables -A INPUT -p tcp --dport 80 -j marca\_paquete}: se especifica la orden que se llevará a cabo al usar la \textit{chain} \textbf{marca\_paquete}. Todos los paquetes que sean de entrada y provengan del puerto 80 serán marcados.
+	\item \texttt{iptables -A marca\_paquete MARK --set-mark 10}: esta orden no es realmente algo que hará la \textit{chain}, sino un ejemplo de como hacer que se marque el paquete mediante la \textit{chain}. Cada paquete que entre al sistema será enviado a la cadena que hemos creado y pasará por las dos reglas anteriores. Si las cumple, el paquete se marcará con el valor que se indique en \texttt{--set-mark}.
+\end{enumerate}
+
+En este último ejemplo el paquete no se marca como tal, es decir, no se le añade nada al paquete como en el caso anterior al que se le añade el número 10. Pero ambas opciones tienen la misma funcionalidad y al ser la segunda opción más usada, he querido ponerla también aunque no añada marca.
+
+\section{Bibliografía}
+\begin{itemize}
+	\item Manual en línea de \texttt{iptables}
+	\item {\color{blue} \url{https://www.linuxquestions.org/}}
+\end{itemize}
+
+\end{document}
