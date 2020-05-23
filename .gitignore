@@ -274,3 +274,7 @@ TSWLatexianTemp*
 
 # Makeindex log files
 *.lpz
+/Practicas/P3/JavaApplication1/nbproject/private/
+/Practicas/P3/JavaApplication1/dist/
+/Practicas/P3/JavaApplication1/build/
+/Practicas/P3/ServicioWebcam/dist/
